@@ -42,4 +42,4 @@ class MktDataEntry:
 
 
 # Market data types
-MktData = TypeVar("MktData", Generator[MktDataEntry], List[MktDataEntry], Tuple[MktDataEntry])
+MktData = TypeVar("MktData", Generator[MktDataEntry, None, None], List[MktDataEntry], Tuple[MktDataEntry])

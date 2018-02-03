@@ -20,6 +20,9 @@ import typing
 if typing.TYPE_CHECKING:
     from typing import Union
 
+log = logging.getLogger("pydtc")
+log.setLevel(logging.INFO)
+
 # Mapping message type to DTC message object and human readable name
 DTC_MTYPE_MAP = {
     Dtc.ENCODING_REQUEST: (Dtc.EncodingRequest, "encoding request"),
@@ -145,8 +148,8 @@ def send_message(m, m_type, sock):
     total_len = 4 + len(m)  # 2 bytes Size + 2 bytes Type
     header = struct.pack('<HH', total_len, m_type)  # Prepare 4-byte little-endian header
     sock.send(header + m)  # Send message
-    if logging.root.level <= logging.DEBUG:
-        logging.debug("Sent {0}".format(DTC_MTYPE_MAP[m_type][1]))
+    if log.level <= logging.DEBUG:
+        log.debug("Sent {0}".format(DTC_MTYPE_MAP[m_type][1]))
 
 
 class DTCProtobufHeartbeat(InterruptibleThread):
@@ -203,8 +206,8 @@ class DTCMessageReceiver(InterruptibleThread):
         self.selector = selectors.DefaultSelector()
         self.selector.register(self.sock, selectors.EVENT_READ)
         self.data_arrival_event = threading.Event()
-        if logging.root.level <= logging.DEBUG:
-            logging.debug("Receiver initialized")
+        if log.level <= logging.DEBUG:
+            log.debug("Receiver initialized")
 
     def run(self):
         """ Receive a message and then wait for signal to receive other messages """
@@ -233,11 +236,11 @@ class DTCMessageReceiver(InterruptibleThread):
                 try:
                     dtc_message = DTC_MTYPE_MAP[msg_type][0]()
                 except KeyError:
-                    if logging.root.level <= logging.WARN:
-                        logging.warning("Received unknown message type: {0}".format(msg_type))
+                    if log.level <= logging.WARN:
+                        log.warning("Received unknown message type: {0}".format(msg_type))
                 else:
-                    if logging.root.level <= logging.DEBUG:
-                        logging.debug("Received {0}".format(DTC_MTYPE_MAP[msg_type][1]))
+                    if log.level <= logging.DEBUG:
+                        log.debug("Received {0}".format(DTC_MTYPE_MAP[msg_type][1]))
                     if msg_type == Dtc.ENCODING_RESPONSE:
                         # Encoding Response is always binary
                         dtc_message = dtc_bin_decoder(dtc_message, msg_body)
@@ -253,8 +256,8 @@ class DTCMessageReceiver(InterruptibleThread):
                         if msg_type != Dtc.HEARTBEAT:
                             self.messages.append((msg_type, dtc_message))
                             self.condition.notify()
-                    if logging.root.level <= logging.DEBUG:
-                        logging.debug(json_format.MessageToJson(dtc_message))
+                    if log.level <= logging.DEBUG:
+                        log.debug(json_format.MessageToJson(dtc_message))
 
 
 class DtcConnection(object):
@@ -284,7 +287,14 @@ class DtcConnection(object):
         self.successful = True
         self.reception_complete = False
         # Connect
-        self.sock = socket.create_connection(dtc_server)
+        try:
+            self.sock = socket.create_connection(dtc_server)
+        except ConnectionRefusedError:
+            log.exception(
+                "Connection refused. Check that DTC server is running and listening at {}:{}".format(
+                    dtc_server[0], dtc_server[1]
+                ), exc_info=False)
+            raise ConnectionError
 
         self.condition = threading.Condition()  # Provider/consumer lock with receiver
         # Start message listener thread
@@ -322,10 +332,10 @@ class DtcConnection(object):
             self.condition.wait()
             logon_resp = self.receiver.messages.popleft()
         if logon_resp[1].Result != Dtc.LOGON_SUCCESS:
-            logging.error(logon_resp[1].ResultText)
+            log.error(logon_resp[1].ResultText)
             self.disconnect()
-        if logging.root.level <= logging.DEBUG:
-            logging.debug("Receiver buffer: {0} message(s)".format(len(self.receiver.messages)))
+        if log.level <= logging.DEBUG:
+            log.debug("Receiver buffer: {0} message(s)".format(len(self.receiver.messages)))
 
         if not self.historical:
             # Begin sending heartbeats
@@ -337,7 +347,7 @@ class DtcConnection(object):
 
     def disconnect(self):
         """ Gracefully logoff and close the connection """
-        logging.debug("Disconnecting from DTC server")
+        log.debug("Disconnecting from DTC server")
         # Stop threads
         self.receiver.stop()
         if not self.historical:
@@ -394,14 +404,14 @@ class DtcConnection(object):
             hist_resp = self.receiver.messages.popleft()
         if hist_resp[0] == Dtc.HISTORICAL_PRICE_DATA_REJECT:
             # If we got reject - display reject text and disconnect
-            logging.error(hist_resp[1].RejectText)
+            log.error(hist_resp[1].RejectText)
             self.successful = False
             self.disconnect()
         elif hist_resp[0] == Dtc.GENERAL_LOG_MESSAGE:
-            logging.warning("Got general message from server: '{}'".format(hist_resp[1].MessageText))
+            log.warning("Got general message from server: '{}'".format(hist_resp[1].MessageText))
         elif bool(hist_resp[1].NoRecordsToReturn):
             # If no records available - give warning and disconnect
-            logging.warning("No historical data records available. Check symbol name.")
+            log.warning("No historical data records available. Check symbol name.")
             self.successful = False
             self.disconnect()
         # Now wait for the first data packet signalled by the MessageReceiver thread
@@ -472,7 +482,7 @@ class DtcDownloadWatcher(threading.Thread):
                                 # last message has already been received while we've been initializing the progress bar
                                 self.hc.condition.wait()
         t.sleep(0.1)  # Let MessageReceiver finish its job
-        logging.debug("{}: reception complete".format(self.name))
+        log.debug("{}: reception complete".format(self.name))
         self.hc.disconnect()
         self.hc.reception_complete = True
         self.finished_event.set()  # Notify other threads that reception is complete
@@ -491,11 +501,14 @@ def dtc_download(symbol, exchange="Bitcoin", start_date="01.01.1970", server=("1
         MktDataEntry: Market data
     """
     if debug:
-        logging.basicConfig(level=logging.DEBUG)
+        log.setLevel(logging.debug)
 
     start_tstamp = str_to_tstamp(start_date)
     # Connect and request data
-    hist_conn = DtcConnection(server)
+    try:
+        hist_conn = DtcConnection(server)
+    except ConnectionError:
+        return
     hist_conn.historical_data_request(symbol, exchange, start=start_tstamp)
 
     if not hist_conn.successful:
@@ -504,7 +517,7 @@ def dtc_download(symbol, exchange="Bitcoin", start_date="01.01.1970", server=("1
     msgs = hist_conn.receiver.messages
     # Wait while messages appear in the deque if it's empty
     if len(msgs) == 0:
-        logging.debug("Main thread is waiting for messages")
+        log.debug("Main thread is waiting for messages")
         with hist_conn.condition:
             hist_conn.condition.wait()
 
@@ -514,7 +527,7 @@ def dtc_download(symbol, exchange="Bitcoin", start_date="01.01.1970", server=("1
     # reception is over and only then proceed to consumption (unless everything has already been received).
     # Parallel reception code parts are not removed in hopes to implement parallelism through multiprocessing.
     if not hist_conn.reception_complete:
-        logging.debug("Main thread is waiting for reception to complete")
+        log.debug("Main thread is waiting for reception to complete")
         hist_conn.watcher.finished_event.wait()
 
     # First yielded object would be general info
