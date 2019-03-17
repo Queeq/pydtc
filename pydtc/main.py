@@ -252,8 +252,11 @@ class DTCMessageReceiver(InterruptibleThread):
                         dtc_message.ParseFromString(msg_body)
                     # Lock message list, add the message there, notify others about it and release the lock
                     with self.condition:
+                        # Log general log messages from the server without storing them
+                        if msg_type == Dtc.GENERAL_LOG_MESSAGE:
+                            log.warning("Got general message from server: '{}'".format(dtc_message.MessageText))
                         # Do not store heartbeat messages
-                        if msg_type != Dtc.HEARTBEAT:
+                        elif msg_type != Dtc.HEARTBEAT:
                             self.messages.append((msg_type, dtc_message))
                             self.condition.notify()
                     if log.level <= logging.DEBUG:
@@ -401,15 +404,14 @@ class DtcConnection(object):
         with self.condition:
             # Wait for response
             self.condition.wait()
+            # Get first recorded message
             hist_resp = self.receiver.messages.popleft()
         if hist_resp[0] == Dtc.HISTORICAL_PRICE_DATA_REJECT:
             # If we got reject - display reject text and disconnect
             log.error(hist_resp[1].RejectText)
             self.successful = False
             self.disconnect()
-        elif hist_resp[0] == Dtc.GENERAL_LOG_MESSAGE:
-            log.warning("Got general message from server: '{}'".format(hist_resp[1].MessageText))
-        elif bool(hist_resp[1].NoRecordsToReturn):
+        elif hist_resp[0] == Dtc.HISTORICAL_PRICE_DATA_RESPONSE_HEADER and bool(hist_resp[1].NoRecordsToReturn):
             # If no records available - give warning and disconnect
             log.warning("No historical data records available. Check symbol name.")
             self.successful = False
