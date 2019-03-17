@@ -501,7 +501,7 @@ def dtc_download(symbol, exchange="Bitcoin", start_date="01.01.1970", server=("1
         MktDataEntry: Market data
     """
     if debug:
-        log.setLevel(logging.debug)
+        log.setLevel(logging.DEBUG)
 
     start_tstamp = str_to_tstamp(start_date)
     # Connect and request data
