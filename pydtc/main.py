@@ -213,7 +213,17 @@ class DTCMessageReceiver(InterruptibleThread):
         """ Receive a message and then wait for signal to receive other messages """
         while self.running:
             # Listen for input event on the socket
-            self.selector.select()
+            try:
+                self.selector.select()
+            except OSError as e:
+                # It might happen in the end of reception that we're trying to read the socket that is closed in the
+                # middle of select() (seems to be the case on Windows)
+                if not self.running:
+                    return
+                else:
+                    log.error("Can't listen to IO events (`select()` failed), the network socket must be closed. "
+                              "MessageReceiver will exit now. The error was: {}".format(e))
+                    return
             self._get_message()
 
     def _get_message(self):
