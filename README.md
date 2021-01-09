@@ -50,3 +50,8 @@ print(df)
         (default ("127.0.0.1", 11101))
     debug (bool): toggle very verbose logging (all messages will be shown)
         (default False)
+
+For debug messages to show up it may be necessary to enable debug logging in the calling script, for example:
+```python
+logging.basicConfig(format='{asctime} {name} {threadName} {levelname}: {message}', style='{', level=logging.DEBUG)
+```
