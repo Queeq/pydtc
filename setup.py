@@ -7,11 +7,11 @@ setup(
     url='https://github.com/Queeq/pydtc',
     license='MIT',
     author='queeq',
-    author_email='i.queeq@gmail.com',
+    author_email='queeq@pm.me',
     description='Very basic Python realization of Data and Trading Communications (DTC) Protocol: '
                 'http://dtcprotocol.org/',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Financial and Insurance Industry',
         'Intended Audience :: Science/Research',
         'Topic :: Software Development :: Libraries',
@@ -19,6 +19,8 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.8'
     ],
     keywords='dtc protocol trading',
     install_requires=['tqdm', 'protobuf', 'pandas', 'python-dateutil']
