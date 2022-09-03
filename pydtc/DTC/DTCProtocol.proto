@@ -37,11 +37,9 @@ enum DTCMessageType
 	MARKET_DATA_REQUEST = 101;
 	MARKET_DATA_REJECT = 103;
 	MARKET_DATA_SNAPSHOT = 104;
-	MARKET_DATA_SNAPSHOT_INT = 125;
 
     MARKET_DATA_UPDATE_TRADE = 107;
 	MARKET_DATA_UPDATE_TRADE_COMPACT = 112;
-	MARKET_DATA_UPDATE_TRADE_INT = 126;
 	MARKET_DATA_UPDATE_LAST_TRADE_SNAPSHOT = 134;
 	MARKET_DATA_UPDATE_TRADE_WITH_UNBUNDLED_INDICATOR = 137;
 	MARKET_DATA_UPDATE_TRADE_WITH_UNBUNDLED_INDICATOR_2 = 146;
@@ -50,47 +48,45 @@ enum DTCMessageType
 	MARKET_DATA_UPDATE_BID_ASK = 108;
 	MARKET_DATA_UPDATE_BID_ASK_COMPACT = 117;
 	MARKET_DATA_UPDATE_BID_ASK_NO_TIMESTAMP = 143;
-	MARKET_DATA_UPDATE_BID_ASK_INT = 127;
+	MARKET_DATA_UPDATE_BID_ASK_FLOAT_WITH_MICROSECONDS = 144;
 
 	MARKET_DATA_UPDATE_SESSION_OPEN = 120;
-	MARKET_DATA_UPDATE_SESSION_OPEN_INT = 128;
 	MARKET_DATA_UPDATE_SESSION_HIGH = 114;
-	MARKET_DATA_UPDATE_SESSION_HIGH_INT = 129;
 	MARKET_DATA_UPDATE_SESSION_LOW = 115;
-	MARKET_DATA_UPDATE_SESSION_LOW_INT = 130;
 	MARKET_DATA_UPDATE_SESSION_VOLUME = 113;
 	MARKET_DATA_UPDATE_OPEN_INTEREST = 124;
 	MARKET_DATA_UPDATE_SESSION_SETTLEMENT = 119;
-	MARKET_DATA_UPDATE_SESSION_SETTLEMENT_INT = 131;
 	MARKET_DATA_UPDATE_SESSION_NUM_TRADES = 135;
 	MARKET_DATA_UPDATE_TRADING_SESSION_DATE = 136;
 
 	MARKET_DEPTH_REQUEST = 102;
 	MARKET_DEPTH_REJECT = 121;
 	MARKET_DEPTH_SNAPSHOT_LEVEL = 122;
-	MARKET_DEPTH_SNAPSHOT_LEVEL_INT = 132;
 	MARKET_DEPTH_SNAPSHOT_LEVEL_FLOAT = 145;
 	MARKET_DEPTH_UPDATE_LEVEL = 106;
 	MARKET_DEPTH_UPDATE_LEVEL_FLOAT_WITH_MILLISECONDS = 140;
 	MARKET_DEPTH_UPDATE_LEVEL_NO_TIMESTAMP = 141;
-	MARKET_DEPTH_UPDATE_LEVEL_INT = 133;
 
 	MARKET_DATA_FEED_STATUS = 100;
 	MARKET_DATA_FEED_SYMBOL_STATUS = 116;
 	TRADING_SYMBOL_STATUS = 138;
 
+	MARKET_ORDERS_REQUEST = 150;
+	MARKET_ORDERS_REJECT = 151;
+	MARKET_ORDERS_ADD = 152;
+	MARKET_ORDERS_MODIFY = 153;
+	MARKET_ORDERS_REMOVE = 154;
+	MARKET_ORDERS_SNAPSHOT_MESSAGE_BOUNDARY = 155;
+
 	// Order entry and modification
 	SUBMIT_NEW_SINGLE_ORDER = 208;
-	SUBMIT_NEW_SINGLE_ORDER_INT = 206;
 
 	SUBMIT_NEW_OCO_ORDER = 201;
-	SUBMIT_NEW_OCO_ORDER_INT = 207;
 	SUBMIT_FLATTEN_POSITION_ORDER = 209;
 
 	CANCEL_ORDER = 203;
 
 	CANCEL_REPLACE_ORDER = 204;
-	CANCEL_REPLACE_ORDER_INT = 205;
 
 	// Trading related
 	OPEN_ORDERS_REQUEST = 300;
@@ -105,6 +101,8 @@ enum DTCMessageType
 	CURRENT_POSITIONS_REQUEST = 305;
 	CURRENT_POSITIONS_REJECT = 307;
 	POSITION_UPDATE = 306;
+	ADD_CORRECTING_ORDER_FILL = 309;
+	CORRECTING_ORDER_FILL_RESPONSE = 310;
 
 	// Account list
 	TRADE_ACCOUNTS_REQUEST = 400;
@@ -133,7 +131,7 @@ enum DTCMessageType
 	ACCOUNT_BALANCE_ADJUSTMENT_COMPLETE = 609;
 	HISTORICAL_ACCOUNT_BALANCES_REQUEST = 603;
 	HISTORICAL_ACCOUNT_BALANCES_REJECT = 604;
-	HISTORICAL_ACCOUNT_BALANCE_RESPONSE = 605;
+	HISTORICAL_ACCOUNT_BALANCE_RESPONSE = 606;
 
 	// Logging
 	USER_MESSAGE = 700;
@@ -151,8 +149,6 @@ enum DTCMessageType
 	HISTORICAL_PRICE_DATA_REJECT = 802;
 	HISTORICAL_PRICE_DATA_RECORD_RESPONSE = 803;
 	HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE = 804;
-	HISTORICAL_PRICE_DATA_RECORD_RESPONSE_INT = 805;
-	HISTORICAL_PRICE_DATA_TICK_RECORD_RESPONSE_INT = 806;
 	HISTORICAL_PRICE_DATA_RESPONSE_TRAILER = 807;
 
 	// Historical market depth data
@@ -187,15 +183,6 @@ enum MessageSupportedEnum
 {
   MESSAGE_UNSUPPORTED = 0;
   MESSAGE_SUPPORTED = 1;
-}
-
-//============================================================================
-enum TradeModeEnum 
-{
-  TRADE_MODE_UNSET= 0;
-  TRADE_MODE_DEMO = 1;
-  TRADE_MODE_SIMULATED = 2;
-  TRADE_MODE_LIVE = 3;
 }
 
 //============================================================================
@@ -435,6 +422,13 @@ enum TradingStatusEnum
   TRADING_STATUS_TRADING_HALT = 4;
 };
 
+/*==========================================================================*/
+enum MessageSetBoundaryEnum
+{
+	MESSAGE_SET_BOUNDARY_UNSET = 0;
+	MESSAGE_SET_BOUNDARY_BEGIN = 1;
+	MESSAGE_SET_BOUNDARY_END = 2;
+};
 
 //============================================================================
 message EncodingRequest
@@ -462,10 +456,11 @@ message LogonRequest
 	int32  Integer_1 = 5;
 	int32  Integer_2 = 6;
 	int32  HeartbeatIntervalInSeconds = 7;
-	TradeModeEnum TradeMode = 8;
+	int32  Unused1 = 8;
 	string TradeAccount = 9;
 	string HardwareIdentifier = 10;
 	string ClientName = 11;
+	int32 MarketDataTransmissionInterval = 12;
 }
 
 //============================================================================
@@ -488,7 +483,7 @@ message LogonResponse
 	uint32 MarketDepthIsSupported = 15;
 	uint32 OneHistoricalPriceDataRequestPerConnection = 16;
 	uint32 BracketOrdersSupported = 17;
-	uint32 UseIntegerPriceOrderMessages = 18;
+	uint32 Unused_1 = 18;
 	uint32 UsesMultiplePositionsPerSymbolAndTradeAccount = 19;
 	uint32 MarketDataSupported = 20;
 }
@@ -581,32 +576,6 @@ message MarketDataSnapshot
 }
 
 //============================================================================
-message MarketDataSnapshot_Int
-{
-	uint32 SymbolID = 1;
-	int32 SessionSettlementPrice = 2;
-	int32 SessionOpenPrice = 3;
-	int32 SessionHighPrice = 4;
-	int32 SessionLowPrice = 5;
-	int32 SessionVolume = 6;
-	uint32 SessionNumTrades = 7;
-	uint32 OpenInterest = 8;
-
-	int32 BidPrice = 9;
-	int32 AskPrice = 10;
-	int32 AskQuantity = 11;
-	int32 BidQuantity = 12;
-	int32 LastTradePrice = 13;
-	int32 LastTradeVolume = 14;
-	double LastTradeDateTime = 15;
-	double BidAskDateTime = 16;
-	uint32 SessionSettlementDateTime = 17;
-	uint32 TradingSessionDate = 18;
-	TradingStatusEnum TradingStatus = 19;
-}
-
-
-//============================================================================
 message MarketDepthSnapshotLevel
 {
 	uint32 SymbolID = 1;
@@ -635,49 +604,17 @@ message MarketDepthSnapshotLevelFloat
 }
 
 //============================================================================
-message MarketDepthSnapshotLevel_Int
-{
-	uint32 SymbolID = 1;
-	AtBidOrAskEnum Side = 2;
-	int32 Price = 3;
-	int32 Quantity = 4;
-	uint32  Level = 5;
-
-	uint32 IsFirstMessageInBatch = 6;
-	uint32 IsLastMessageInBatch = 7;
-	double DateTime = 8;
-
-	uint32 NumOrders = 9;
-}
-
-//============================================================================
 message MarketDepthUpdateLevel
 {
 	uint32 SymbolID = 1;
 	AtBidOrAskEnum Side = 2;
 	double Price = 3;
 	double Quantity = 4;
-
 	MarketDepthUpdateTypeEnum UpdateType = 5;
-
 	double DateTime = 6;
-
 	uint32 NumOrders = 7;
-}
-
-//============================================================================
-message MarketDepthUpdateLevel_Int
-{
-	uint32 SymbolID = 1;
-	AtBidOrAskEnum Side = 2;
-	int32 Price = 3;
-	int32 Quantity = 4;
-
-	MarketDepthUpdateTypeEnum UpdateType = 5;
-
-	double DateTime = 6;
-
-	uint32 NumOrders = 7;
+	FinalUpdateInBatchEnum FinalUpdateInBatch = 8;
+	uint32 Level = 9;
 }
 
 //============================================================================
@@ -691,6 +628,7 @@ message MarketDepthUpdateLevelFloatWithMilliseconds
 	int32 UpdateType = 6;
 	uint32 NumOrders = 7;
 	FinalUpdateInBatchEnum FinalUpdateInBatch = 8;
+	uint32 Level = 9;
 }
 
 //============================================================================
@@ -703,6 +641,7 @@ message MarketDepthUpdateLevelNoTimestamp
 	int32 Side = 5;
 	int32 UpdateType = 6;
 	FinalUpdateInBatchEnum FinalUpdateInBatch = 7;
+	uint32 Level = 8;
 }
 //============================================================================
 message MarketDataUpdateSessionSettlement
@@ -713,26 +652,10 @@ message MarketDataUpdateSessionSettlement
 }
 
 //============================================================================
-message MarketDataUpdateSessionSettlement_Int
-{
-	uint32 SymbolID = 1;
-	int32 Price = 2;
-	int32 DateTime = 3;
-}
-
-//============================================================================
 message MarketDataUpdateSessionOpen
 {
 	uint32 SymbolID = 1;
 	double Price = 2;
-	uint32 TradingSessionDate = 3;
-}
-
-//============================================================================
-message MarketDataUpdateSessionOpen_Int
-{
-	uint32 SymbolID = 1;
-	int32 Price = 2;
 	uint32 TradingSessionDate = 3;
 }
 
@@ -780,18 +703,6 @@ message MarketDataUpdateTradeCompact
 }
 
 //============================================================================
-message MarketDataUpdateTrade_Int
-{
-	uint32 SymbolID = 1;
-
-	AtBidOrAskEnum AtBidOrAsk = 2;
-
-	int32 Price = 3;
-	int32 Volume = 4;
-	double DateTime = 5;
-}
-
-//============================================================================
 message MarketDataUpdateLastTradeSnapshot
 {
 	uint32 SymbolID = 1;
@@ -825,6 +736,7 @@ message MarketDataUpdateTradeWithUnbundledIndicator2
 
 	AtBidOrAskEnum8 AtBidOrAsk = 5;
 	UnbundledTradeIndicatorEnum UnbundledTradeIndicator = 6;
+	uint32 TradeCondition = 7;
 }
 
 //============================================================================
@@ -835,6 +747,7 @@ message MarketDataUpdateTradeNoTimestamp
 	uint32 Volume = 3;
 	AtBidOrAskEnum8 AtBidOrAsk = 4;
 	UnbundledTradeIndicatorEnum UnbundledTradeIndicator = 5;
+	uint32 TradeCondition = 6;
 }
 
 //============================================================================
@@ -862,18 +775,6 @@ message MarketDataUpdateBidAsk2
 }
 
 //============================================================================
-message MarketDataUpdateBidAsk_Int
-{
-	uint32 SymbolID = 1;
-
-	int32 BidPrice = 2;
-	int32 BidQuantity = 3;
-	int32 AskPrice = 4;
-	int32 AskQuantity = 5;
-	sfixed32 DateTime = 6;
-}
-
-//============================================================================
 message MarketDataUpdateBidAskCompact
 {
 	float BidPrice = 1;
@@ -894,6 +795,17 @@ message MarketDataUpdateBidAskNoTimeStamp
 	uint32 BidQuantity = 3;
 	float AskPrice = 4;
 	uint32 AskQuantity = 5;
+};
+
+//============================================================================
+message MarketDataUpdateBidAskFloatWithMicroseconds
+{
+	uint32 SymbolID = 1;
+	float BidPrice = 2;
+	float BidQuantity = 3;
+	float AskPrice = 4;
+	float AskQuantity = 5;
+	uint64 DateTime = 6;
 };
 
 //============================================================================
@@ -923,14 +835,6 @@ message MarketDataUpdateSessionHigh
 }
 
 //============================================================================
-message MarketDataUpdateSessionHigh_Int
-{
-	uint32 SymbolID = 1;
-	int32 Price = 2;
-	uint32 TradingSessionDate = 3;
-}
-
-//============================================================================
 message MarketDataUpdateSessionLow
 {
 	uint32 SymbolID = 1;
@@ -939,11 +843,63 @@ message MarketDataUpdateSessionLow
 }
 
 //============================================================================
-message MarketDataUpdateSessionLow_Int
+message MarketOrdersRequest
+{
+	RequestActionEnum RequestAction = 1;
+	uint32 SymbolID = 2;
+	string Symbol = 3;
+	string Exchange = 4;
+	int32 SendQuantitiesGreaterOrEqualTo = 5;
+}
+
+//============================================================================
+message MarketOrdersReject
 {
 	uint32 SymbolID = 1;
-	int32 Price = 2;
-	uint32 TradingSessionDate = 3;
+	string RejectText = 2;
+}
+
+//============================================================================
+message MarketOrdersAdd
+{
+	uint32 SymbolID = 1;
+	BuySellEnum Side = 2;
+	double Price = 3;
+	uint32 Quantity = 4;
+	uint64 OrderID = 5;
+	uint64 DateTime = 6;
+}
+
+//============================================================================
+message MarketOrdersModify
+{
+	uint32 SymbolID = 1;	
+	BuySellEnum Side = 2;
+	double Price = 3;
+	uint32 Quantity = 4;
+	uint64 OrderID = 5;
+	double PriorPrice = 6;
+	uint32 PriorQuantity = 7;
+	uint64 PriorOrderID = 8;
+	uint64 DateTime = 9;
+}
+
+//============================================================================
+message MarketOrdersRemove
+{
+	uint32 SymbolID = 1;
+	double Price = 2;
+	uint32 Quantity = 3;
+	uint64 OrderID = 4;
+	uint64 DateTime = 5;
+	BuySellEnum Side = 6;
+}
+
+//============================================================================
+message MarketOrdersSnapshotMessageBoundary
+{
+	uint32 SymbolID = 1;
+	MessageSetBoundaryEnum MessageBoundary = 2;
 }
 
 //============================================================================
@@ -977,6 +933,9 @@ message SubmitNewSingleOrder
 	OpenCloseTradeEnum OpenOrClose = 15;
 
 	double MaxShowQuantity = 16;
+
+	string Price1AsString = 17;
+	string Price2AsString = 18;
 }
 
 //============================================================================
@@ -1035,6 +994,8 @@ message CancelReplaceOrder
 	uint64 GoodTillDateTime = 10;
 	uint32 UpdatePrice1OffsetToParent = 11;
 	string TradeAccount = 12;
+	string Price1AsString = 13;
+	string Price2AsString = 14;
 }
 
 //============================================================================
@@ -1100,6 +1061,12 @@ message SubmitNewOCOOrder
 	uint32 UseOffsets = 23;
 	double OffsetFromParent1 = 24;
 	double OffsetFromParent2 = 25;
+	uint32 MaintainSamePricesOnParentFill = 26;
+
+	string Price1_1AsString = 27;
+	string Price2_1AsString = 28;
+	string Price1_2AsString = 29;
+	string Price2_2AsString = 30;
 }
 
 //============================================================================
@@ -1245,6 +1212,8 @@ message OrderUpdate
 
 	sfixed64 OrderReceivedDateTime = 34;
 	double LatestTransactionDateTime = 35;
+
+	string Username = 36;
 }
 
 //============================================================================
@@ -1288,25 +1257,44 @@ message HistoricalOrderFillResponse
 message PositionUpdate
 {
 	int32 RequestID = 1;
-
 	int32 TotalNumberMessages = 2;
-
 	int32 MessageNumber = 3;
-
 	string Symbol = 4;
 	string Exchange = 5;
-
 	double Quantity = 6;
 	double AveragePrice = 7;
-
 	string PositionIdentifier  = 8;
-
 	string TradeAccount = 9;
 	uint32 NoPositions = 10;
-
 	uint32 Unsolicited = 11;
 	double MarginRequirement = 12;
 	uint32 EntryDateTime = 13;
+	double OpenProfitLoss = 14;
+	double HighPriceDuringPosition = 15;
+	double LowPriceDuringPosition = 16;
+	double QuantityLimit = 17;
+	double MaxPotentialPostionQuantity = 18;
+}
+
+//============================================================================
+message AddCorrectingOrderFill
+{
+	string Symbol = 1;
+	string Exchange = 2;
+	string TradeAccount = 3;
+	string ClientOrderID = 4;
+	BuySellEnum BuySell = 5;
+	double FillPrice = 6;
+	double FillQuantity = 7;
+	string FreeFormText = 8;
+}
+
+//============================================================================
+message CorrectingOrderFillResponse
+{
+	string ClientOrderID = 1;
+	string ResultText = 2;
+	int32 IsError = 3;
 }
 
 //============================================================================
@@ -1450,7 +1438,10 @@ message SecurityDefinitionResponse
     uint32 OpenInterest = 30;
 
 	sfixed32 RolloverDate = 31;
-	uint32 IsDelayed = 32;
+	uint32 IsDelayed = 32;	
+	int64 SecurityIdentifier = 33;
+
+	string ProductIdentifier = 34;
 }
 
 //============================================================================
@@ -1499,6 +1490,19 @@ message AccountBalanceUpdate
 	uint64 TransactionIdentifier = 15;
 	double DailyNetLossLimit = 16;
 	double TrailingAccountValueToLimitPositions = 17;
+
+	uint32 DailyNetLossLimitReached = 18;
+	uint32 IsUnderRequiredMargin = 19;
+
+	uint32 ClosePositionsAtEndOfDay = 20;
+	uint32 TradingIsDisabled = 21;
+	string Description = 22;
+	uint32 IsUnderRequiredAccountValue = 23;
+	sfixed64 TransactionDateTime = 24;
+
+	double MarginRequirementFull = 25;
+	double MarginRequirementFullPositionsOnly = 26;	
+	double PeakMarginRequirement = 27;
 }
 
 //============================================================================
@@ -1573,14 +1577,14 @@ message GeneralLogMessage
 message JournalEntryAdd
 {
 	string JournalEntry = 1;
-	sfixed64 DateTime = 2;
+	uint64 DateTime = 2;
 };
 
 /*==========================================================================*/
 message JournalEntriesRequest
 {
 	int32 RequestID = 1;
-	sfixed64 StartDateTime = 2;
+	uint64 StartDateTime = 2;
 };
 
 /*==========================================================================*/
@@ -1594,7 +1598,7 @@ message JournalEntriesReject
 message JournalEntryResponse
 {
 	string JournalEntry = 1;
-	sfixed64 DateTime = 2;
+	uint64 DateTime = 2;
 	uint32 IsFinalResponse = 3;
 };
 
@@ -1615,7 +1619,7 @@ message HistoricalPriceDataRequest
 	sfixed64 StartDateTime = 5;
 	sfixed64 EndDateTime = 6;
 	uint32 MaxDaysToReturn = 7;
-	uint32  UseZLibCompression = 8;
+	uint32 UseZLibCompression = 8;
 	uint32 RequestDividendAdjustedStockData = 9;
 	uint32 Integer_1 = 10;
 }
@@ -1678,38 +1682,6 @@ message HistoricalPriceDataTickRecordResponse
 }
 
 //============================================================================
-message HistoricalPriceDataRecordResponse_Int
-{
-	int32 RequestID = 1;
-
-	sfixed64 StartDateTime = 2;
-	int32 OpenPrice = 3;
-	int32 HighPrice = 4;
-	int32 LowPrice = 5;
-	int32 LastPrice = 6;
-	int32 Volume = 7;
-	uint32 NumTrades = 8;
-	int32 BidVolume = 9;
-	int32 AskVolume = 10;
-
-	uint32 IsFinalRecord = 11;
-}
-
-//============================================================================
-message HistoricalPriceDataTickRecordResponse_Int
-{
-	int32 RequestID = 1;
-
-	double DateTime = 2;
-
-	int32 Price = 3;
-	int32 Volume = 4;
-
-	AtBidOrAskEnum AtBidOrAsk = 5;
-	uint32 IsFinalRecord = 6;
-}
-
-//============================================================================
 message HistoricalPriceDataResponseTrailer
 {
 	int32 RequestID = 1;
@@ -1724,7 +1696,7 @@ message HistoricalMarketDepthDataRequest
 	string Exchange = 3;
 	int64 StartDateTime = 4;
 	int64 EndDateTime = 5;
-	uint32  UseZLibCompression = 6;
+	uint32 UseZLibCompression = 6;
 	uint32 Integer_1 = 7;
 }
 
