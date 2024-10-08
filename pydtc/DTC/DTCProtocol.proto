@@ -83,6 +83,7 @@ enum DTCMessageType
 
 	SUBMIT_NEW_OCO_ORDER = 201;
 	SUBMIT_FLATTEN_POSITION_ORDER = 209;
+	FLATTEN_POSITIONS_FOR_TRADE_ACCOUNT = 210;
 
 	CANCEL_ORDER = 203;
 
@@ -156,6 +157,10 @@ enum DTCMessageType
 	HISTORICAL_MARKET_DEPTH_DATA_RESPONSE_HEADER = 901;
 	HISTORICAL_MARKET_DEPTH_DATA_REJECT = 902;
 	HISTORICAL_MARKET_DEPTH_DATA_RECORD_RESPONSE = 903;
+	
+	// Nonstandard
+	TRADE_ACCOUNT_TRADING_IS_DISABLED_REQUEST = 10206;
+	TRADE_ACCOUNT_TRADING_IS_DISABLED_RESPONSE = 10207;
 }
 
 //============================================================================
@@ -200,6 +205,14 @@ enum UnbundledTradeIndicatorEnum
   UNBUNDLED_TRADE_NONE = 0;
   FIRST_SUB_TRADE_OF_UNBUNDLED_TRADE = 1;
   LAST_SUB_TRADE_OF_UNBUNDLED_TRADE = 2;
+};
+
+/*==========================================================================*/
+enum TradeConditionEnum 
+{
+  TRADE_CONDITION_NONE = 0;
+  TRADE_CONDITION_NON_LAST_UPDATE_EQUITY_TRADE = 1;
+  TRADE_CONDITION_ODD_LOT_EQUITY_TRADE = 2;
 };
 
 //============================================================================
@@ -429,6 +442,14 @@ enum MessageSetBoundaryEnum
 	MESSAGE_SET_BOUNDARY_BEGIN = 1;
 	MESSAGE_SET_BOUNDARY_END = 2;
 };
+
+//============================================================================
+enum TradingIsDisabledEnum
+{
+  TRADING_IS_DISABLED_RETURN_CURRENT_VALUE = 0;
+  TRADING_IS_DISABLED_DISABLE = 1;
+  TRADING_IS_DISABLED_ENABLE = 2;
+}
 
 //============================================================================
 message EncodingRequest
@@ -722,7 +743,7 @@ message MarketDataUpdateTradeWithUnbundledIndicator
 	double Price = 4;
 	uint32 Volume = 5;
 	double DateTime = 6;
-	uint32 TradeCondition = 7;
+	TradeConditionEnum TradeCondition = 7;
 }
 
 //============================================================================
@@ -736,7 +757,7 @@ message MarketDataUpdateTradeWithUnbundledIndicator2
 
 	AtBidOrAskEnum8 AtBidOrAsk = 5;
 	UnbundledTradeIndicatorEnum UnbundledTradeIndicator = 6;
-	uint32 TradeCondition = 7;
+	TradeConditionEnum TradeCondition = 7;
 }
 
 //============================================================================
@@ -747,7 +768,7 @@ message MarketDataUpdateTradeNoTimestamp
 	uint32 Volume = 3;
 	AtBidOrAskEnum8 AtBidOrAsk = 4;
 	UnbundledTradeIndicatorEnum UnbundledTradeIndicator = 5;
-	uint32 TradeCondition = 6;
+	TradeConditionEnum TradeCondition = 6;
 }
 
 //============================================================================
@@ -936,6 +957,8 @@ message SubmitNewSingleOrder
 
 	string Price1AsString = 17;
 	string Price2AsString = 18;
+	
+	double IntendedPositionQuantity = 19;
 }
 
 //============================================================================
@@ -977,6 +1000,15 @@ message SubmitFlattenPositionOrder
 	string FreeFormText = 5;
 
 	uint32 IsAutomatedOrder = 6;
+}
+
+//============================================================================
+message FlattenPositionsForTradeAccount
+{
+	string TradeAccount = 1;
+	string ClientOrderID = 2;
+	string FreeFormText = 3;
+	uint32 IsAutomatedOrder = 4;
 }
 
 //============================================================================
@@ -1251,6 +1283,10 @@ message HistoricalOrderFillResponse
 	double HighPriceDuringPosition = 16;
 	double LowPriceDuringPosition = 17;
 	double PositionQuantity = 18;
+
+	string Username = 19;
+	string ExchangeOrderID = 20;
+	string SenderSubID = 21;
 }
 
 //============================================================================
@@ -1503,6 +1539,7 @@ message AccountBalanceUpdate
 	double MarginRequirementFull = 25;
 	double MarginRequirementFullPositionsOnly = 26;	
 	double PeakMarginRequirement = 27;
+	string IntroducingBroker = 28;
 }
 
 //============================================================================
@@ -1521,6 +1558,7 @@ message AccountBalanceAdjustmentReject
 {
 	int32 RequestID = 1;
 	string RejectText = 2;
+	string TradeAccount = 3;
 }
 
 //============================================================================
@@ -1528,6 +1566,8 @@ message AccountBalanceAdjustmentComplete
 {
 	int32 RequestID = 1;
 	int64 TransactionID = 2;
+	string TradeAccount = 3;
+	double NewBalance = 4;
 }
 
 //============================================================================
@@ -1727,4 +1767,23 @@ message HistoricalMarketDepthDataRecordResponse
 	float Price = 6;
 	uint32 Quantity = 7;
 	uint32 IsFinalRecord = 8;
+}
+
+//============================================================================
+message TradeAccountTradingIsDisabledRequest
+{
+	uint32 RequestID = 1;
+	string TradeAccount = 2;
+	TradingIsDisabledEnum SetTradingIsDisabled = 3;
+	TradingIsDisabledEnum SetDisableTradingForParentAccountOnly = 4;
+}
+
+//============================================================================
+message TradeAccountTradingIsDisabledResponse
+{
+	uint32 RequestID = 1;
+	string TradeAccount = 2;
+	TradingIsDisabledEnum TradingIsDisabled = 3;
+	TradingIsDisabledEnum DisableTradingForParentAccountOnly = 4;
+	string ErrorText = 5;
 }
