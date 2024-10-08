@@ -556,6 +556,8 @@ def dtc_download(symbol, exchange="Bitcoin", start_date="01.01.1970", server=("1
                 if bool(msg.IsFinalRecord):
                     # We found last message. Set the complete flag on the connection.
                     hist_conn.reception_complete = True
+                    if msg.StartDateTime == 0:
+                        return
                 preproc_pbar.update()
                 yield MktDataEntry(
                     time=to_datetime(msg.StartDateTime, unit="s", utc=True),
